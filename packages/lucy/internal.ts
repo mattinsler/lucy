@@ -1,4 +1,4 @@
-import lodash, { remove } from 'lodash';
+import lodash from 'lodash';
 
 import { isElement } from './is-element';
 import { Instance } from './internal-types';
@@ -25,6 +25,7 @@ export const Internal: InternalInterface = {
       state: null,
       key: '',
       parent: null,
+      // depth of node in the tree
       level: 0,
       children: new Map(),
       hooks: [],

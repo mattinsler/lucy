@@ -1,0 +1,11 @@
+{
+  "name": "@mattinsler/lucy-watchman",
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "fb-watchman": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/fb-watchman": "^2.0.0"
+  }
+}

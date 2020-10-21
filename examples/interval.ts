@@ -1,4 +1,4 @@
-import { render, Lucy } from '../';
+import { render, Lucy } from '@mattinsler/lucy';
 
 function useInterval(fn: () => void, interval: number) {
   Lucy.useEffect(() => {
