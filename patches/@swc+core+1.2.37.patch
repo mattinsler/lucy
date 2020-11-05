@@ -1,0 +1,22 @@
+diff --git a/node_modules/@swc/core/Visitor.js b/node_modules/@swc/core/Visitor.js
+index 9d359a3..36121fd 100644
+--- a/node_modules/@swc/core/Visitor.js
++++ b/node_modules/@swc/core/Visitor.js
+@@ -469,7 +469,7 @@ class Visitor {
+     }
+     visitTsEnumDeclaration(n) {
+         n.id = this.visitIdentifier(n.id);
+-        n.member = this.visitTsEnumMembers(n.member);
++        n.members = this.visitTsEnumMembers(n.members);
+         return n;
+     }
+     visitTsEnumMembers(nodes) {
+@@ -1240,7 +1240,7 @@ class Visitor {
+         return n;
+     }
+     visitObjectPattern(n) {
+-        n.props = this.visitObjectPatternProperties(n.props);
++        n.properties = this.visitObjectPatternProperties(n.properties);
+         n.typeAnnotation = this.visitTsTypeAnnotation(n.typeAnnotation);
+         return n;
+     }

@@ -49,6 +49,9 @@ export const Internal: InternalInterface = {
     const instances = Array.from(container.instancesWithWork);
     container.instancesWithWork = new Set<Instance>();
 
+    // sort by level in the graph
+    instances.sort((l, r) => l.level - r.level);
+
     // rather than this, find all common roots and process those
     instances.forEach((instance) => {
       if (instance.hasWork) {
@@ -56,6 +59,10 @@ export const Internal: InternalInterface = {
         updateInstance({ container, instance });
       }
     });
+
+    if (container.workRegistered) {
+      process.nextTick(() => Internal.work(container));
+    }
   },
 };
 
@@ -187,5 +194,6 @@ function updateInstance({ container, instance }: { container: Container; instanc
   instance.state = state;
 
   // update children
-  instance.children.forEach((child) => child.hasWork && updateInstance({ container, instance: child }));
+  // instance.children.forEach((child) => child.hasWork && updateInstance({ container, instance: child }));
+  instance.children.forEach((child) => child.hasWork && Internal.registerMoreWork({ container, instance: child }));
 }

@@ -1,3 +1,5 @@
+import isEqual from 'lodash/isEqual';
+
 import { Internal } from './internal';
 import { StateHookState } from './internal-types';
 import { Element, Props, StateSetter } from './types';
@@ -5,7 +7,7 @@ import { Element, Props, StateSetter } from './types';
 interface LucyInterface {
   create<P extends {}>(type: (props: P) => any, props: Props<P>): Element;
   useEffect(fn: () => void, deps?: any[]): void;
-  useState<T>(initialValue?: T): [T, StateSetter<T>];
+  useState<T>(initialValue?: T | (() => T)): [T, StateSetter<T>];
 }
 
 export const Lucy: LucyInterface = {
@@ -39,7 +41,7 @@ export const Lucy: LucyInterface = {
     }
 
     const oldDeps = hook.deps;
-    if (oldDeps.length !== deps.length || oldDeps.some((d, idx) => d !== deps[idx])) {
+    if (!isEqual(oldDeps, deps)) {
       fn();
       hook.deps = deps;
     }
@@ -71,7 +73,7 @@ export const Lucy: LucyInterface = {
       instance.hooks[instance.hookCursor] = {
         type: 'state',
         setState: createSetter(instance.hookCursor),
-        state: initialState,
+        state: typeof initialState === 'function' ? (initialState as Function)() : initialState,
       } as StateHookState;
     } else if (!instance.hooks[instance.hookCursor] || instance.hooks[instance.hookCursor].type !== 'state') {
       throw new Error();

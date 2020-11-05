@@ -1,0 +1,9 @@
+{
+  "name": "@mattinsler/lucy-extract-source-deps",
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "@swc/core": "^1.2.37",
+    "fs-extra": "^9.0.1"
+  }
+}

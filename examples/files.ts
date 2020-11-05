@@ -1,32 +1,44 @@
+import path from 'path';
 import { render, Lucy } from '@mattinsler/lucy';
 import { useGlobby } from '@mattinsler/lucy-globby';
-import { useReadFile, JSONFile } from '@mattinsler/lucy-files';
+import { SourceDependency, useExtractSourceDepsFromFiles } from '@mattinsler/lucy-extract-source-deps';
+
+function aggregateDeps(depsLists: SourceDependency[][]) {
+  const agg = new Set<string>();
+
+  depsLists.forEach((deps) => {
+    deps.forEach((dep) => {
+      agg.add(dep.value);
+    });
+  });
+
+  return Array.from(agg);
+}
 
 interface RootProps {
   cwd: string;
 }
 function Root({ cwd }: RootProps) {
-  const files = useGlobby(['**/*.ts'], { cwd });
-  console.log(files);
+  const sourceFiles = useGlobby(['**/*.ts'], { cwd });
+  const sourceDeps = useExtractSourceDepsFromFiles(sourceFiles, { cwd });
 
   return {
     cwd,
-    sources: files.map((file) => Lucy.create(TSFile, { file })),
+    deps: aggregateDeps(Object.values(sourceDeps)),
+    sources: sourceFiles.map((file) => Lucy.create(TSFile, { deps: sourceDeps[file], file })),
   };
 }
 
 interface TSFileProps {
+  deps: SourceDependency[];
   file: string;
 }
-function TSFile({ file }: TSFileProps) {
-  const source = useReadFile(file, 'utf8');
-
+function TSFile({ deps, file }: TSFileProps) {
   return {
     file,
-    source,
+    deps,
   };
 }
 
 const container = render(Lucy.create(Root, { cwd: __dirname }));
-setInterval(() => console.log(container.toJSON()), 1000);
-// process.on('exit', () => console.log(container.toJSON()));
+process.on('exit', () => console.log(JSON.stringify(container.toJSON(), null, 2)));
