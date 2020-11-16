@@ -1,0 +1,13 @@
+{
+  "name": "@mattinsler/lucy-extract-source-deps-babel",
+  "version": "0.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "@babel/core": "^7.12.3",
+    "@babel/preset-typescript": "^7.10.4",
+    "fs-extra": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.1.12"
+  }
+}

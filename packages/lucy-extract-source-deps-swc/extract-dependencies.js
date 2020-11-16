@@ -20,13 +20,15 @@ class DependencyExtractor extends Visitor {
     ) {
       if (e.callee.value === 'require') {
         this.deps.push({
+          location: [e.arguments[0].expression.span.start, e.arguments[0].expression.span.end],
           type: 'require',
           typesOnly: false,
           value: e.arguments[0].expression.value,
         });
       } else if (e.callee.value === 'import') {
         this.deps.push({
-          type: 'import',
+          location: [e.arguments[0].expression.span.start, e.arguments[0].expression.span.end],
+          type: 'dynamic import',
           typesOnly: false,
           value: e.arguments[0].expression.value,
         });
@@ -37,6 +39,7 @@ class DependencyExtractor extends Visitor {
 
   visitImportDeclaration(e) {
     this.deps.push({
+      location: [e.source.span.start, e.source.span.end],
       type: 'import',
       typesOnly: e.typeOnly,
       value: e.source.value,

@@ -32,4 +32,4 @@ function LogValue({ value }: { value: number }) {
 }
 
 const container = render(Lucy.create(Root, {}));
-process.on('exit', () => console.log(container.toJSON()));
+process.on('exit', () => console.log(container.state));

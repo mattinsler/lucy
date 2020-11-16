@@ -1,9 +1,8 @@
-import path from 'path';
 import { render, Lucy } from '@mattinsler/lucy';
 import { useGlobby } from '@mattinsler/lucy-globby';
-import { SourceDependency, useExtractSourceDepsFromFiles } from '@mattinsler/lucy-extract-source-deps';
+import { SourceDependency, useExtractSourceDepsFromFiles } from '@mattinsler/lucy-extract-source-deps-babel';
 
-function aggregateDeps(depsLists: SourceDependency[][]) {
+function aggregateDeps(depsLists: SourceDependency[][]): string[] {
   const agg = new Set<string>();
 
   depsLists.forEach((deps) => {
@@ -41,4 +40,4 @@ function TSFile({ deps, file }: TSFileProps) {
 }
 
 const container = render(Lucy.create(Root, { cwd: __dirname }));
-process.on('exit', () => console.log(JSON.stringify(container.toJSON(), null, 2)));
+process.on('exit', () => console.log(JSON.stringify(container.state, null, 2)));

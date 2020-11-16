@@ -5,7 +5,7 @@ import { StateHookState } from './internal-types';
 import { Element, Props, StateSetter } from './types';
 
 interface LucyInterface {
-  create<P extends {}>(type: (props: P) => any, props: Props<P>): Element;
+  create<P extends {}, S extends any>(type: (props: Props<P>) => S, props: Props<P>): Element<S>;
   useEffect(fn: () => void, deps?: any[]): void;
   useState<T>(initialValue?: T | (() => T)): [T, StateSetter<T>];
 }

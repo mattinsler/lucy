@@ -2,7 +2,7 @@ import path from 'path';
 import { Lucy } from '@mattinsler/lucy';
 
 import { SourceDependency } from './types';
-import { extractSourceDepsFromFile } from './extract-with-swc';
+import { extractSourceDepsFromFile } from './extract-dependencies';
 
 export function useExtractSourceDepsFromFiles(files: string[], opts: { cwd?: string } = {}) {
   const [deps, setDeps] = Lucy.useState<{ [file: string]: SourceDependency[] }>(() => {
