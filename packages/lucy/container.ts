@@ -1,4 +1,4 @@
-import lodash from 'lodash';
+import cloneDeepWith from 'lodash/cloneDeepWith';
 import { EventEmitter } from 'events';
 
 import { isElement } from './is-element';
@@ -6,7 +6,7 @@ import { InternalContainer, Instance } from './internal-types';
 
 function containerToJavascript<S>(container: InternalContainer<S>): S {
   function fromInstance(instance: Instance): any {
-    return lodash.cloneDeepWith(instance.state, (value, key) => {
+    return cloneDeepWith(instance.state, (value, key) => {
       if (isElement(value)) {
         const childInstance = instance.children.get(value.key!);
         if (childInstance) {
