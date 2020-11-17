@@ -1,4 +1,4 @@
-import lodash from 'lodash';
+import isPlainObject from 'lodash/isPlainObject';
 
 import { isElement } from './is-element';
 import { Container, Element } from './types';
@@ -84,7 +84,7 @@ function deriveChildren(state: any): Map<string, Element> {
       children.set(obj.key!, obj);
     } else if (Array.isArray(obj)) {
       obj.forEach((value, idx) => traverse(value, [...keyPath, String(idx)]));
-    } else if (lodash.isPlainObject(obj)) {
+    } else if (isPlainObject(obj)) {
       Object.entries(obj).forEach(([key, value]) => {
         traverse(value, [...keyPath, key]);
       });
@@ -100,11 +100,11 @@ function havePropsChanged(prevProps: any, nextProps: any) {
     return false;
   }
 
-  if (lodash.isPlainObject(prevProps) !== lodash.isPlainObject(nextProps)) {
+  if (isPlainObject(prevProps) !== isPlainObject(nextProps)) {
     return true;
   }
 
-  if (lodash.isPlainObject(prevProps)) {
+  if (isPlainObject(prevProps)) {
     const prevKeys = Object.keys(prevProps).sort();
     const nextKeys = Object.keys(nextProps).sort();
     if (prevKeys.length === nextKeys.length) {
