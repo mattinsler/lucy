@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "dependencies": {
+    "lru-cache": "^6.0.0",
     "@mattinsler/watchman-client": "^0.0.0"
+  },
+  "devDependencies": {
+    "@types/lru-cache": "^5.1.0"
   }
 }

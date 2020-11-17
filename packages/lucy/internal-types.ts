@@ -1,4 +1,4 @@
-import { StateSetter } from './types';
+import { Container, StateSetter } from './types';
 
 export interface EffectHookState {
   type: 'effect';
@@ -23,4 +23,8 @@ export interface Instance {
   hookCursor: number;
   executions: number;
   hasWork: boolean;
+}
+
+export interface InternalContainer<S = any> extends Container<S> {
+  emitIdle(): void;
 }

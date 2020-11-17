@@ -31,4 +31,7 @@ export interface Container<S = any> {
 
   instancesWithWork: Set<Instance>;
   workRegistered: boolean;
+
+  onIdle(callback: () => void): void;
+  offIdle(callback: () => void): void;
 }

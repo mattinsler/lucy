@@ -1,5 +1,6 @@
+import path from 'path';
 import { render, Lucy } from '@mattinsler/lucy';
-import { useGlobby } from '@mattinsler/lucy-globby';
+import { useFiles } from '@mattinsler/lucy-watchman';
 import { SourceDependency, useExtractSourceDepsFromFiles } from '@mattinsler/lucy-extract-source-deps-babel';
 
 function aggregateDeps(depsLists: SourceDependency[][]): string[] {
@@ -15,29 +16,44 @@ function aggregateDeps(depsLists: SourceDependency[][]): string[] {
 }
 
 interface RootProps {
-  cwd: string;
+  root: string;
 }
-function Root({ cwd }: RootProps) {
-  const sourceFiles = useGlobby(['**/*.ts'], { cwd });
-  const sourceDeps = useExtractSourceDepsFromFiles(sourceFiles, { cwd });
+function Root({ root }: RootProps) {
+  const pkgFiles = useFiles({
+    directories: { exclude: ['node_modules'] },
+    filenames: ['package.json'],
+    root,
+  });
 
   return {
-    cwd,
-    deps: aggregateDeps(Object.values(sourceDeps)),
-    sources: sourceFiles.map((file) => Lucy.create(TSFile, { deps: sourceDeps[file], file })),
+    packages: pkgFiles.map((pkgFile) => Lucy.create(Project, { packageJsonFile: pkgFile, root })),
   };
 }
 
-interface TSFileProps {
-  deps: SourceDependency[];
-  file: string;
+interface ProjectProps {
+  packageJsonFile: string;
+  root: string;
 }
-function TSFile({ deps, file }: TSFileProps) {
+function Project({ packageJsonFile, root }: ProjectProps) {
+  const packageRoot = path.dirname(packageJsonFile);
+  const sourceFiles = useFiles({
+    directories: { exclude: ['node_modules'] },
+    extensions: ['js', 'jsx', 'ts', 'tsx'],
+    root: path.join(root, packageRoot),
+  });
+  const dependenciesBySourceFile = useExtractSourceDepsFromFiles(sourceFiles, { cwd: packageRoot });
+
   return {
-    file,
-    deps,
+    dependencies: aggregateDeps(Object.values(dependenciesBySourceFile)),
+    dependenciesBySourceFile,
+    sourceFiles,
+    root: packageRoot,
   };
 }
 
-const container = render(Lucy.create(Root, { cwd: __dirname }));
-process.on('exit', () => console.log(JSON.stringify(container.state, null, 2)));
+const container = render(Lucy.create(Root, { root: process.cwd() }));
+
+const print = () => console.log(JSON.stringify(container.state, null, 2));
+
+container.onIdle(print);
+process.on('exit', print);

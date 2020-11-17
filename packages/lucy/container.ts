@@ -1,10 +1,10 @@
 import lodash from 'lodash';
+import { EventEmitter } from 'events';
 
 import { isElement } from './is-element';
-import { Instance } from './internal-types';
-import { Container } from './types';
+import { InternalContainer, Instance } from './internal-types';
 
-function containerToJavascript<S>(container: Container<S>): S {
+function containerToJavascript<S>(container: InternalContainer<S>): S {
   function fromInstance(instance: Instance): any {
     return lodash.cloneDeepWith(instance.state, (value, key) => {
       if (isElement(value)) {
@@ -19,14 +19,26 @@ function containerToJavascript<S>(container: Container<S>): S {
   return fromInstance(container.root.children.get('')!);
 }
 
-export function createContainer<S>(root: Instance): Container<S> {
-  const container: Container<S> = {
+export function createContainer<S>(root: Instance): InternalContainer<S> {
+  const emitter = new EventEmitter();
+
+  const container: InternalContainer<S> = {
     instancesWithWork: new Set<Instance>([root]),
     root,
     workRegistered: true,
 
     get state() {
       return containerToJavascript(container);
+    },
+
+    onIdle(callback) {
+      emitter.on('idle', callback);
+    },
+    offIdle(callback) {
+      emitter.off('idle', callback);
+    },
+    emitIdle() {
+      emitter.emit('idle');
     },
   };
 

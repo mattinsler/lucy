@@ -1,8 +1,8 @@
 import lodash from 'lodash';
 
 import { isElement } from './is-element';
-import { Instance } from './internal-types';
 import { Container, Element } from './types';
+import { InternalContainer, Instance } from './internal-types';
 
 interface InternalInterface {
   current: null | {
@@ -12,7 +12,7 @@ interface InternalInterface {
 
   createInstance(element: Element): Instance;
   registerMoreWork(opts: { container: Container; instance: Instance }): void;
-  work(container: Container): void;
+  work(container: InternalContainer): void;
 }
 
 export const Internal: InternalInterface = {
@@ -44,7 +44,7 @@ export const Internal: InternalInterface = {
     }
   },
 
-  work(container: Container) {
+  work(container: InternalContainer) {
     container.workRegistered = false;
     const instances = Array.from(container.instancesWithWork);
     container.instancesWithWork = new Set<Instance>();
@@ -62,6 +62,8 @@ export const Internal: InternalInterface = {
 
     if (container.workRegistered) {
       process.nextTick(() => Internal.work(container));
+    } else {
+      container.emitIdle();
     }
   },
 };
