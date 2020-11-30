@@ -1,15 +1,9 @@
-import { Container, StateSetter } from './types';
+import { Container, LucyEnvironment, Singleton } from './types';
 
-export interface EffectHookState {
-  type: 'effect';
-  deps: any[];
-}
-export interface StateHookState {
-  type: 'state';
-  setState: StateSetter<any>;
+export interface HookState {
+  type: string;
   state: any;
 }
-export type HookState = EffectHookState | StateHookState;
 
 export interface Instance {
   type: Function;
@@ -26,5 +20,13 @@ export interface Instance {
 }
 
 export interface InternalContainer<S = any> extends Container<S> {
+  root: Instance;
+
+  instancesWithWork: Set<Instance>;
+  workRegistered: boolean;
+
+  LucyEnvironmentSingleton?: Singleton<LucyEnvironment>;
+  singletons: Map<string | Symbol, any>;
+
   emitIdle(): void;
 }

@@ -6,7 +6,7 @@ import { InternalContainer, Instance } from './internal-types';
 
 interface InternalInterface {
   current: null | {
-    container: Container;
+    container: InternalContainer;
     instance: Instance;
   };
 
@@ -35,7 +35,7 @@ export const Internal: InternalInterface = {
     };
   },
 
-  registerMoreWork({ container, instance }: { container: Container; instance: Instance }) {
+  registerMoreWork({ container, instance }: { container: InternalContainer; instance: Instance }) {
     instance.hasWork = true;
     container.instancesWithWork.add(instance);
     if (!container.workRegistered) {
@@ -136,7 +136,7 @@ function diffKeys(oldMap: Map<string, unknown>, newMap: Map<string, unknown>): [
   return [added, removed];
 }
 
-function updateInstance({ container, instance }: { container: Container; instance: Instance }) {
+function updateInstance({ container, instance }: { container: InternalContainer; instance: Instance }) {
   Internal.current = { container, instance };
 
   instance.hookCursor = 0;

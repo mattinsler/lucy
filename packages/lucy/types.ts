@@ -1,5 +1,3 @@
-import { Instance } from './internal-types';
-
 export type DerivedContainerState<S> = {
   element: S extends Element<infer T> ? DerivedContainerState<T> : never;
   array: S extends Array<infer T> ? Array<DerivedContainerState<T>> : never;
@@ -18,6 +16,15 @@ export interface Element<S extends any = any> {
   type: Function;
 }
 
+export interface MutableRefObject<T> {
+  current: T;
+}
+
+export interface Singleton<T> {
+  id: Symbol;
+  initialValue: T;
+}
+
 export interface StateSetter<T> {
   (newValue: T): void;
   (newValueSetter: (oldValue: T) => T): void;
@@ -26,12 +33,19 @@ export interface StateSetter<T> {
 export type Props<P extends {}> = P & { key?: string };
 
 export interface Container<S = any> {
-  root: Instance;
   readonly state: Readonly<S>;
-
-  instancesWithWork: Set<Instance>;
-  workRegistered: boolean;
 
   onIdle(callback: () => void): void;
   offIdle(callback: () => void): void;
+}
+
+export interface LucyEnvironment {
+  mode: 'single' | 'continuous';
+}
+
+export interface File {
+  // should not be persisted
+  absolutePath: string;
+  path: string;
+  hash: string;
 }

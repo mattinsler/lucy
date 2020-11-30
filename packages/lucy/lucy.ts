@@ -1,91 +1,164 @@
 import isEqual from 'lodash/isEqual';
 
 import { Internal } from './internal';
-import { StateHookState } from './internal-types';
-import { Element, Props, StateSetter } from './types';
+import { Instance, InternalContainer } from './internal-types';
+import { Element, MutableRefObject, Props, Singleton, StateSetter } from './types';
 
-interface LucyInterface {
-  create<P extends {}, S extends any>(type: (props: Props<P>) => S, props: Props<P>): Element<S>;
-  useEffect(fn: () => void, deps?: any[]): void;
-  useState<T>(initialValue?: T | (() => T)): [T, StateSetter<T>];
+function createHook<R, S>(
+  hookType: string,
+  init: (context: { container: InternalContainer; instance: Instance }) => S,
+  execute: (state: S, context: { container: InternalContainer; instance: Instance }) => R
+): R {
+  if (Internal.current === null) {
+    throw new Error('Hooks can only be called from within an element or a custom hook.');
+  }
+
+  const { container, instance } = Internal.current!;
+
+  if (instance.executions === 0) {
+    const state = init({ container, instance });
+    instance.hooks[instance.hookCursor] = {
+      type: hookType,
+      state,
+    };
+  }
+
+  const hook = instance.hooks[instance.hookCursor];
+
+  if (!hook || hook.type !== hookType) {
+    throw new Error('Hooks must be called in the same order every time and cannot be called within an if block.');
+  }
+
+  const result = execute(instance.hooks[instance.hookCursor].state, { container, instance });
+
+  instance.hookCursor += 1;
+  return result;
 }
 
-export const Lucy: LucyInterface = {
-  create(type, props) {
-    return {
-      __marker: 'Element',
-      key: props.key,
-      props,
-      type,
+function create<P extends {}, S extends any>(type: (props: Props<P>) => S, props: Props<P>): Element<S> {
+  return {
+    __marker: 'Element',
+    key: props.key,
+    props,
+    type,
+  };
+}
+
+function createSingleton<T>(initialState?: T | (() => T)): Singleton<T> {
+  return {
+    id: Symbol(),
+    initialValue: typeof initialState === 'function' ? (initialState as Function)() : initialState,
+  };
+}
+
+function useSingleton<T>(singleton: Singleton<T>): T {
+  return createHook(
+    'singleton',
+    () => singleton,
+    ({ id, initialValue }, { container }) => {
+      if (!container.singletons.has(id)) {
+        container.singletons.set(id, initialValue);
+      }
+      return container.singletons.get(id);
+    }
+  );
+}
+
+function useNamedSingleton<T>(name: string, createIfNotExist: () => T): T {
+  return createHook(
+    'singleton',
+    () => ({ name }),
+    ({ name }, { container }) => {
+      if (!container.singletons.has(name)) {
+        container.singletons.set(name, createIfNotExist());
+      }
+      return container.singletons.get(name);
+    }
+  );
+}
+
+function useEffect(fn: () => void, deps: any[] = []): void {
+  createHook(
+    'effect',
+    () => ({ deps: [Symbol('initial')] }),
+    (state) => {
+      const oldDeps = state.deps;
+      if (!isEqual(oldDeps, deps)) {
+        fn();
+        state.deps = deps;
+      }
+    }
+  );
+}
+
+function useRef<T>(initialState?: T | (() => T)): MutableRefObject<T> {
+  return createHook(
+    'ref',
+    () => ({ current: typeof initialState === 'function' ? (initialState as Function)() : initialState }),
+    ({ current }) => ({ current })
+  );
+}
+
+function useState<T>(
+  initialState?: T | (() => T),
+  isEqual?: (oldState: T, newState: T) => boolean
+): [state: T, setState: StateSetter<T>, triggerChange: () => void] {
+  if (!isEqual) {
+    isEqual = (oldState: T, newState: T): boolean => {
+      return oldState === newState;
     };
-  },
+  }
 
-  useEffect(fn, deps = []) {
-    if (Internal.current === null) {
-      throw new Error();
-    }
+  return createHook(
+    'state',
+    ({ container, instance }) => {
+      function triggerChange() {
+        Internal.registerMoreWork({ container, instance });
+      }
 
-    const { instance } = Internal.current!;
+      function createSetState(cursor: number) {
+        return (nextState: any) => {
+          const oldState = instance.hooks[cursor].state.state;
+          const newState = typeof nextState === 'function' ? nextState(oldState) : nextState;
 
-    if (instance.executions === 0) {
-      instance.hooks[instance.hookCursor] = {
-        type: 'effect',
-        deps: [Symbol('initial')],
-      };
-    }
+          if (!isEqual!(oldState, newState)) {
+            instance.hooks[cursor].state.state = newState;
+            triggerChange();
+          }
+        };
+      }
 
-    const hook = instance.hooks[instance.hookCursor];
-
-    if (!hook || hook.type !== 'effect') {
-      throw new Error();
-    }
-
-    const oldDeps = hook.deps;
-    if (!isEqual(oldDeps, deps)) {
-      fn();
-      hook.deps = deps;
-    }
-
-    instance.hookCursor += 1;
-  },
-
-  useState(initialState) {
-    if (Internal.current === null) {
-      throw new Error();
-    }
-
-    const { container, instance } = Internal.current!;
-
-    function createSetter(cursor: number) {
-      return function (nextState: any) {
-        let newState;
-        const oldState = (instance.hooks[cursor] as StateHookState).state;
-        newState = typeof nextState === 'function' ? nextState(oldState) : nextState;
-
-        if (newState !== oldState) {
-          (instance.hooks[cursor] as StateHookState).state = newState;
-          Internal.registerMoreWork({ container, instance });
-        }
-      };
-    }
-
-    if (instance.executions === 0) {
-      instance.hooks[instance.hookCursor] = {
-        type: 'state',
-        setState: createSetter(instance.hookCursor),
+      return {
+        setState: createSetState(instance.hookCursor),
         state: typeof initialState === 'function' ? (initialState as Function)() : initialState,
-      } as StateHookState;
-    } else if (!instance.hooks[instance.hookCursor] || instance.hooks[instance.hookCursor].type !== 'state') {
-      throw new Error();
+        triggerChange,
+      };
+    },
+    ({ setState, state, triggerChange }) => {
+      return [state, setState, triggerChange];
     }
+  );
+}
 
-    const hook = instance.hooks[instance.hookCursor];
+function useLucyEnvironment() {
+  if (Internal.current === null) {
+    throw new Error('Hooks can only be called from within an element or a custom hook.');
+  }
 
-    if (!hook || hook.type !== 'state') {
-      throw new Error();
-    }
+  if (!Internal.current.container.LucyEnvironmentSingleton) {
+    throw new Error('Hooks can only be called from within an element or a custom hook.');
+  }
 
-    instance.hookCursor += 1;
-    return [hook.state, hook.setState];
-  },
+  return useSingleton(Internal.current.container.LucyEnvironmentSingleton);
+}
+
+export const Lucy = {
+  create,
+  createSingleton,
+  useEffect,
+  useLucyEnvironment,
+  useNamedSingleton,
+  useRef,
+  useSingleton,
+  useState,
 };

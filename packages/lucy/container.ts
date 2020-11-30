@@ -25,6 +25,7 @@ export function createContainer<S>(root: Instance): InternalContainer<S> {
   const container: InternalContainer<S> = {
     instancesWithWork: new Set<Instance>([root]),
     root,
+    singletons: new Map<string | Symbol, any>(),
     workRegistered: true,
 
     get state() {

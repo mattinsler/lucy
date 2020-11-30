@@ -1,4 +1,6 @@
+import path from 'path';
 import fs from 'fs-extra';
+import crypto from 'crypto';
 import { Lucy } from '@mattinsler/lucy';
 
 export function useReadFile(file: fs.PathLike | number): Buffer | undefined;
@@ -55,16 +57,24 @@ interface WriteOtherFileProps {
 export type WriteFileProps = WriteJSONFileProps | WriteOtherFileProps;
 
 export function useWriteFile(props: WriteFileProps) {
+  const filesToHashMap = Lucy.useNamedSingleton('FilesToHashMap', () => new Map<string, string>());
+
   Lucy.useEffect(() => {
     const text = props.json ? JSON.stringify(props.content, null, 2) : props.content;
     const encoding = props.json ? 'utf8' : props.encoding;
 
-    fs.writeFile(props.path, text, { encoding }, (err) => {
-      if (err) {
-        throw err;
-      }
-    });
+    const currentHash = filesToHashMap.get(props.path);
+    const futureHash = crypto.createHash('sha1').update(text).digest('hex');
+    if (!(currentHash && currentHash === futureHash)) {
+      console.log(`write: ${props.path} = ${futureHash}`);
+      filesToHashMap.set(props.path, futureHash);
+      fs.writeFile(props.path, text, { encoding }, (err) => {
+        if (err) {
+          throw err;
+        }
+      });
+    }
 
     return () => fs.unlink(props.path);
-  }, []);
+  }, [props]);
 }

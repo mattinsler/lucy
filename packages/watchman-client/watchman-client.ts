@@ -167,7 +167,7 @@ export class WatchmanClient implements WatchmanClientInterface {
     } else {
       // can throw...
       // console.log('========== >>> SUBSCRIBE', root, name, query);
-      await this.commandAsync('subscribe', root, name, query);
+      await this.commandAsync('subscribe', root, subscriptionName, query);
 
       if (!this.subscriptions[subscriptionName]) {
         this.subscriptions[subscriptionName] = [];

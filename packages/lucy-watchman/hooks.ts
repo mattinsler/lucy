@@ -1,8 +1,12 @@
 // import LRU from 'lru-cache';
-import { Lucy } from '@mattinsler/lucy';
+import path from 'path';
+
+import { File, Lucy } from '@mattinsler/lucy';
 import {
   Expression,
+  File as WatchmanFile,
   MatchExpression,
+  Subscription,
   SuffixExpression,
   WatchmanClient,
   simplifyExpression,
@@ -81,14 +85,66 @@ function parseFilesQuery(query: FilesQuery) {
 // // lru cache to keep the file shas we've already seen for optimized file writes
 // const fileShaCache =
 
-export function useFiles(query: FilesQuery): string[] {
-  const [files, setFiles] = Lucy.useState<string[]>([]);
+// files... add by filename, remove by filename, modify by filename/sha
+
+export function useFiles(query: FilesQuery): File[] {
+  const { mode } = Lucy.useLucyEnvironment();
+  const filesToHashMap = Lucy.useNamedSingleton('FilesToHashMap', () => new Map<string, string>());
+  const [files, setFiles, triggerFilesChange] = Lucy.useState<Map<string, File>>(new Map());
 
   const watchman = new WatchmanClient();
 
   Lucy.useEffect(() => {
     const { expression, root } = parseFilesQuery(query);
-    console.log(JSON.stringify(expression, null, 2));
+
+    let subscription: Subscription<any>;
+
+    function updateFiles(watchmanFiles: WatchmanFile<'name' | 'exists' | 'content.sha1hex'>[]) {
+      for (const watchmanFile of watchmanFiles) {
+        if (watchmanFile.exists) {
+          filesToHashMap.set(path.join(root, watchmanFile.name), watchmanFile['content.sha1hex']);
+        } else {
+          filesToHashMap.delete(path.join(root, watchmanFile.name));
+        }
+      }
+
+      // even though we won't be returning a new object, we should use the callback setter
+      // so that the process of updating the files object is scheduled in a linear way
+      setFiles((oldFiles) => {
+        let hasChanged = false;
+
+        for (const watchmanFile of watchmanFiles) {
+          if (watchmanFile.exists) {
+            if (!oldFiles.has(watchmanFile.name)) {
+              oldFiles.set(watchmanFile.name, {
+                absolutePath: path.join(root, watchmanFile.name),
+                hash: watchmanFile['content.sha1hex'],
+                path: watchmanFile.name,
+              });
+              hasChanged = true;
+            } else if (oldFiles.get(watchmanFile.name)!.hash !== watchmanFile['content.sha1hex']) {
+              oldFiles.set(watchmanFile.name, {
+                absolutePath: path.join(root, watchmanFile.name),
+                hash: watchmanFile['content.sha1hex'],
+                path: watchmanFile.name,
+              });
+              hasChanged = true;
+            }
+          } else {
+            if (oldFiles.delete(watchmanFile.name)) {
+              hasChanged = true;
+            }
+          }
+        }
+
+        // setters work on object equivalency, which does not detect internal object changes
+        if (hasChanged) {
+          triggerFilesChange();
+        }
+
+        return oldFiles;
+      });
+    }
 
     async function start() {
       await watchman.connect();
@@ -98,9 +154,31 @@ export function useFiles(query: FilesQuery): string[] {
         fields: ['name', 'exists', 'content.sha1hex'],
       });
 
-      setFiles(queryResult.files.filter((file) => file.exists).map((file) => file.name));
+      updateFiles(queryResult.files);
+      // cache queryResult.clock
+
+      if (mode === 'continuous') {
+        try {
+          subscription = await watchman.subscribe(root, {
+            expression,
+            fields: ['name', 'exists', 'content.sha1hex'],
+            since: queryResult.clock,
+          });
+
+          subscription.on('data', (data) => {
+            console.log(data);
+            updateFiles(data.files);
+            // cache data.clock
+          });
+        } catch (err) {
+          console.log(err.stack);
+        }
+      }
     }
     async function stop() {
+      if (subscription) {
+        subscription.end();
+      }
       await watchman.watchDel(root);
     }
 
@@ -108,5 +186,5 @@ export function useFiles(query: FilesQuery): string[] {
     return () => stop();
   }, [query]);
 
-  return files;
+  return Array.from(files.values());
 }
