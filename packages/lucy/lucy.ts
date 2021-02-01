@@ -46,7 +46,7 @@ function create<P extends {}, S extends any>(type: (props: Props<P>) => S, props
 
 function createSingleton<T>(initialState?: T | (() => T)): Singleton<T> {
   return {
-    id: Symbol(),
+    id: Symbol('lucy singleton'),
     initialValue: typeof initialState === 'function' ? (initialState as Function)() : initialState,
   };
 }

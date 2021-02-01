@@ -6,7 +6,7 @@ import { InternalContainer, Instance } from './internal-types';
 
 function containerToJavascript<S>(container: InternalContainer<S>): S {
   function fromInstance(instance: Instance): any {
-    return cloneDeepWith(instance.state, (value, key) => {
+    return cloneDeepWith(instance.state, (value, _key) => {
       if (isElement(value)) {
         const childInstance = instance.children.get(value.key!);
         if (childInstance) {

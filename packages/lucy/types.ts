@@ -9,6 +9,7 @@ export type DerivedContainerState<S> = {
   value: S;
 }[S extends Element ? 'element' : S extends Array<any> ? 'array' : S extends Object ? 'object' : 'value'];
 
+// @ts-expect-error 'S' is declared but its value is never read.
 export interface Element<S extends any = any> {
   __marker: 'Element';
   key?: string;
