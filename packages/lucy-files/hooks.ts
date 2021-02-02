@@ -1,16 +1,17 @@
-import path from 'path';
 import fs from 'fs-extra';
 import crypto from 'crypto';
 import { Lucy } from '@mattinsler/lucy';
 
-export function useReadFile(file: fs.PathLike | number): Buffer | undefined;
-export function useReadFile(file: fs.PathLike | number, encoding: string): string | undefined;
+type PathLike = string | Buffer | number;
+
+export function useReadFile(file: PathLike | number): Buffer | undefined;
+export function useReadFile(file: PathLike | number, encoding: string): string | undefined;
 export function useReadFile(
-  file: fs.PathLike | number,
+  file: PathLike | number,
   options: { flag?: string } | { encoding: string; flag?: string }
 ): string | undefined;
 
-export function useReadFile(file: fs.PathLike | number, options?: any) {
+export function useReadFile(file: PathLike | number, options?: any) {
   const [content, setContent] = Lucy.useState<Buffer | string | undefined>(undefined);
 
   Lucy.useEffect(() => {
@@ -26,7 +27,7 @@ export function useReadFile(file: fs.PathLike | number, options?: any) {
   return content;
 }
 
-export function useReadJSONFile<T>(file: fs.PathLike | number): T | undefined {
+export function useReadJSONFile<T>(file: PathLike | number): T | undefined {
   const [jsonContent, setJSONContent] = Lucy.useState<T | undefined>(undefined);
 
   Lucy.useEffect(() => {

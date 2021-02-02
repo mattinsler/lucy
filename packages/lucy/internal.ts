@@ -117,24 +117,24 @@ function havePropsChanged(prevProps: any, nextProps: any) {
   return true;
 }
 
-function diffKeys(oldMap: Map<string, unknown>, newMap: Map<string, unknown>): [added: string[], removed: string[]] {
-  const added: string[] = [];
-  const removed: string[] = [];
-
-  oldMap.forEach((_, oldKey) => {
-    if (!newMap.has(oldKey)) {
-      removed.push(oldKey);
-    }
-  });
-
-  newMap.forEach((_, newKey) => {
-    if (!oldMap.has(newKey)) {
-      added.push(newKey);
-    }
-  });
-
-  return [added, removed];
-}
+// function diffKeys(oldMap: Map<string, unknown>, newMap: Map<string, unknown>): [added: string[], removed: string[]] {
+//   const added: string[] = [];
+//   const removed: string[] = [];
+//
+//   oldMap.forEach((_, oldKey) => {
+//     if (!newMap.has(oldKey)) {
+//       removed.push(oldKey);
+//     }
+//   });
+//
+//   newMap.forEach((_, newKey) => {
+//     if (!oldMap.has(newKey)) {
+//       added.push(newKey);
+//     }
+//   });
+//
+//   return [added, removed];
+// }
 
 function updateInstance({ container, instance }: { container: InternalContainer; instance: Instance }) {
   Internal.current = { container, instance };
@@ -145,7 +145,7 @@ function updateInstance({ container, instance }: { container: InternalContainer;
 
   const children = deriveChildren(state);
 
-  const [added, removed] = diffKeys(instance.children, children);
+  // const [added, removed] = diffKeys(instance.children, children);
 
   // remove children
   // removed.forEach((key) => {

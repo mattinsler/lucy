@@ -12,10 +12,15 @@ export function simplifyExpression(expression: Expression): Expression {
           .slice(1)
           .map(coalesceInner)
           .filter(Boolean)
-          .forEach((e) => (map[objectHash(e)] = e));
+          .forEach((e) => { map[objectHash(e)] = e; });
 
         const values = Object.values(map);
-        return values.length === 0 ? undefined : values.length === 1 ? values[0] : [expr[0], ...values];
+
+        if (values.length === 0) {
+          return undefined;
+        }
+
+        return values.length === 1 ? values[0] : [expr[0], ...values];
       }
 
       return (expr as any).map(coalesceInner);
